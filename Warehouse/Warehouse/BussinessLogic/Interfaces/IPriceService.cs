@@ -1,10 +1,12 @@
-﻿using Warehouse.Models;
+﻿using CSharpFunctionalExtensions;
+using Warehouse.Models;
 
 namespace Warehouse.BussinessLogic.Interfaces
 {
     public interface IPriceService
     {
-        Task<IReadOnlyCollection<Price>> GetPricesAsync();
-        Task<bool> SavePricesAsync(IReadOnlyCollection<Price> prices);
+        Task<Result> SavePriceAsync(CancellationToken token);
+        Task<Result<byte[]>> GetPriceFileAsync(CancellationToken token);
+        Task<Result> SavePriceFileOnDeviceAsync(byte[] byteFile, CancellationToken token);
     }
 }

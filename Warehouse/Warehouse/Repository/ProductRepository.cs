@@ -1,50 +1,27 @@
-﻿using CsvHelper.Configuration;
-using CsvHelper;
-using Dapper;
-using Newtonsoft.Json;
-using System.Globalization;
+﻿using Dapper;
 using Warehouse.Context;
 using Warehouse.Models;
 using Warehouse.Repository.Interfaces;
-using System.Text;
+using CSharpFunctionalExtensions;
 
 namespace Warehouse.Repository
 {
     public class ProductRepository : IProductRepository
     {
         private readonly DataContext _context;
-        private readonly IDownloadRepository _downloadRepository;
-
         private const string ProductTableName = "Product";
 
-        public ProductRepository(DataContext context, IDownloadRepository downloadRepository)
+        public ProductRepository(DataContext context) => _context = context;
+
+        public async Task<Result> SaveProductsAsync(List<Product> products)
         {
-            _context = context;
-            _downloadRepository = downloadRepository;
-        }
-
-        public async Task<IReadOnlyCollection<Product>> GetProductsAsync(string url)
-        {
-            var destinationFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            var destinationPath = Path.Combine(destinationFolder, "Products.csv");
-
-            var byteFile = await _downloadRepository.DownloadFileAsync(url);
-
-            await _downloadRepository.SaveFileOnDevice(byteFile, destinationPath);
-
-            var jsonContent = ConvertCsvToProductListJson(byteFile);
-            return JsonConvert.DeserializeObject<IReadOnlyCollection<Product>>(jsonContent) ?? new List<Product>();
-        }
-
-        public async Task<bool> SaveProductsAsync(IReadOnlyCollection<Product> products)
-        {
-            if (!products.Any()) return false;
+            if (!products.Any()) return Result.Failure("Error trying to save. Product list is empty");
     
             var tableExistsQuery = @"SELECT COUNT(*)
                                      FROM INFORMATION_SCHEMA.TABLES
                                      WHERE TABLE_NAME = @TableName";
 
-            var createProductTableQuery = @"CREATE TABLE Product (ID NVARCHAR(255) PRIMARY KEY,
+            var createProductTableQuery = @"CREATE TABLE Product (ID INT PRIMARY KEY,
                                                                   SKU NVARCHAR(255),
                                                                   name NVARCHAR(255),
                                                                   EAN NVARCHAR(255),
@@ -53,11 +30,10 @@ namespace Warehouse.Repository
                                                                   is_wire BIT,
                                                                   available BIT,
                                                                   is_vendor BIT,
-                                                                  default_image NVARCHAR(MAX)
-                                                                  CONSTRAINT UC_ID UNIQUE (ID))"; 
-                                                                                             
+                                                                  default_image NVARCHAR(MAX))"; 
+                                                                                            
             var insertQuery = @"INSERT INTO Product (ID, SKU, name, EAN, producer_name, category, is_wire, available, is_vendor, default_image)
-                                             VALUES (@Id, @SKU, @Name, @EAN, @Producer_Name, @Category, @Is_Wire, @Available, @Is_Vendor, @Default_Image)";
+                                             VALUES (@Id, @SKU, @Name, @EAN, @ProducerName, @Category, @IsWire, @IsAvailable, @IsVendor, @DefaultImage)";
 
             using var connection = _context.CreateConnection();
             connection.Open();
@@ -72,37 +48,12 @@ namespace Warehouse.Repository
                 await connection.ExecuteAsync(insertQuery, products, transaction: transaction);
 
                 transaction.Commit();
-                return true;
+                return Result.Success();
             }
             catch (Exception e)
             {
                 transaction.Rollback();
-                await Console.Out.WriteLineAsync(e.Message);
-                return false;
-            }
-        }
-
-        private static string ConvertCsvToProductListJson(byte[] data)
-        {
-            try
-            {
-                string csvContent = Encoding.UTF8.GetString(data);
-
-                var csvConfig = new CsvConfiguration(CultureInfo.InvariantCulture)
-                {
-                    Delimiter = ";"
-                };
-
-                using var reader = new StringReader(csvContent);
-                using var csv = new CsvReader(reader, csvConfig);
-                var productList = csv.GetRecords<dynamic>().ToList();
-
-                return JsonConvert.SerializeObject(productList, new JsonSerializerSettings());
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Conversion CSV to JSON error: {ex.Message}");
-                return string.Empty;
+                return Result.Failure(e.Message);
             }
         }
 

@@ -1,10 +1,11 @@
-﻿using Warehouse.Models;
+﻿using CSharpFunctionalExtensions;
 
 namespace Warehouse.BussinessLogic.Interfaces
 {
     public interface IInventoryService
     {
-        Task<IReadOnlyCollection<Inventory>> GetInventoryAsync();
-        Task SaveInventoryAsync(IReadOnlyCollection<Inventory> inventories);
+        Task<Result<byte[]>> GetInventoryFileAsync(CancellationToken token);
+        Task<Result> SaveInventoryFileOnDeviceAsync(byte[] inventoryFile, CancellationToken token);
+        Task<Result> FilterAndSaveInventoryAsync(CancellationToken token);
     }
 }
