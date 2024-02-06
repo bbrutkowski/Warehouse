@@ -1,11 +1,11 @@
-﻿using Warehouse.Models;
+﻿using CSharpFunctionalExtensions;
+using Warehouse.Models;
 
 namespace Warehouse.Repository.Interfaces
 {
     public interface IProductRepository
     {
-        Task<bool> SaveProductsAsync(IReadOnlyCollection<Product> products);
-        Task<IReadOnlyCollection<Product>> GetProductsAsync(string url);
+        Task<Result> SaveProductsAsync(List<Product> products);
         Task<ProductInfoDto> GetProductBySkuAsync(string sku);
     }
 }

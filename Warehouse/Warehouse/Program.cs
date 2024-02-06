@@ -13,10 +13,11 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddHttpClient();
+
 builder.Services.AddSingleton<DataContext>();
 
-builder.Services.AddScoped<IDownloadService, DownloadService>();
-builder.Services.AddScoped<IDownloadRepository, DownloadRepository>();
+builder.Services.AddScoped<IFileService, FileService>();
 
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();

@@ -8,9 +8,9 @@ namespace Warehouse.Models
     {
         public string? Id { get; set;}
         public string? SKU { get; set;}
-        public string? PriceNet { get; set;}
-        public string? PriceAfterDiscount { get; set;}
-        public string? VatRate { get; set;}
-        public string? PriceAfterLogisticDiscount { get; set;}
+        public decimal PriceNet { get; set;}
+        public decimal PriceAfterDiscount { get; set;}
+        public int VatRate { get; set;}
+        public decimal? PriceAfterLogisticDiscount { get; set;}
     }
 }
